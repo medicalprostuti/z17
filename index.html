@@ -1,0 +1,1149 @@
+<!DOCTYPE html>
+<html lang="bn">
+  <head>
+    <script>
+      document.addEventListener("contextmenu", (event) =>
+        event.preventDefault()
+      );
+      document.addEventListener("keydown", (event) => {
+        if (
+          (event.ctrlKey &&
+            ["u", "s", "i", "j"].includes(event.key.toLowerCase())) ||
+          event.key === "F12"
+        ) {
+          event.preventDefault();
+        }
+      });
+    </script>
+
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Online Exam</title>
+    <!-- Chart.js CDN -->
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+      @import url("https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@300;400;500;600;700&display=swap");
+
+      body {
+        font-family: "Hind Siliguri", sans-serif;
+        margin: 0;
+        padding: 0;
+        background-color: #f4f4f4;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+      }
+
+      .container {
+        font-family: "Hind Siliguri", sans-serif;
+        width: 100%;
+        margin: auto;
+        background-color: white;
+        padding: 20px;
+        border-radius: 10px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        min-height: 80vh;
+      }
+
+      .exam-content {
+        padding: 20px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+
+      h1 {
+        color: #1b0b54;
+        text-align: center;
+        margin-bottom: 10px;
+      }
+
+      #timer {
+        font-size: 20px;
+        color: #1b0b54;
+        margin-bottom: 5px;
+        font-weight: normal;
+        text-align: center;
+      }
+
+      #exam-info {
+        font-size: 16px;
+        color: black;
+        margin-bottom: 20px;
+        text-align: center;
+      }
+
+      #exam {
+        width: 100%;
+        min-height: 100px;
+      }
+
+      .chart-container {
+        width: 200px;
+        height: 200px;
+        margin: 10px auto;
+        background-color: #f9f9f9;
+        border-radius: 15px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        display: none;
+        padding: 10px;
+      }
+
+      .chart-container.visible {
+        display: block;
+      }
+
+      .question-container {
+        text-align: left;
+        margin-bottom: 20px;
+        display: block;
+      }
+
+      .question-label {
+        font-weight: bold;
+        color: #1b0b54;
+        margin-bottom: 10px;
+      }
+
+      .options {
+        margin-top: 10px;
+      }
+
+      .option {
+        margin-bottom: 8px;
+        display: flex;
+        align-items: center;
+        cursor: pointer;
+        padding: 5px;
+        border-radius: 5px;
+        text-transform: uppercase;
+      }
+
+      .circle {
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        border: 2px solid #1b0b54;
+        margin-right: 10px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        color: #1b0b54;
+        font-weight: bold;
+        font-size: 18px;
+      }
+
+      .selected .circle {
+        background-color: #1b0b54;
+        color: white;
+      }
+
+      .correct-text {
+        color: green !important;
+      }
+
+      .incorrect-text {
+        color: #ff0800 !important;
+      }
+
+      .unattempted-text {
+        color: orange !important;
+      }
+
+      #submitBtn {
+        font-family: hind siliguri;
+        padding: 15px 30px;
+        background-color: #1b0b54;
+        color: white;
+        border: none;
+        cursor: pointer;
+        font-size: 18px;
+        font-weight: bold;
+        border-radius: 10px;
+        margin-top: 20px;
+        width: 200px;
+        transition: background-color 0.3s ease;
+      }
+
+      #submitBtn:hover {
+        background-color: #1b0b54;
+      }
+
+      .popup {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background-color: white;
+        padding: 20px;
+        width: 300px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+        border-radius: 10px;
+        text-align: center;
+        display: none;
+        z-index: 1000;
+        transition: transform 0.5s ease, opacity 0.5s ease;
+      }
+
+      .popup.slide-out {
+        transform: translate(-50%, -100%);
+        opacity: 0;
+      }
+
+      .popup-header {
+        background-color: #1b0b54;
+        color: white;
+        padding: 10px;
+        font-size: 20px;
+        font-weight: bold;
+        border-radius: 10px 10px 0 0;
+      }
+
+      .popup-body {
+        padding: 15px;
+      }
+
+      .popup-body p {
+        margin: 10px 0;
+      }
+
+      .confirm-btn {
+        font-family: hind siliguri;
+        background-color: #34c759;
+        color: white;
+        padding: 8px 15px;
+        border: none;
+        cursor: pointer;
+        font-size: 14px;
+        border-radius: 5px;
+        margin: 5px;
+      }
+
+      .confirm-btn:hover {
+        background-color: #34c759;
+      }
+
+      .cancel-btn {
+        background-color: #ff3b30;
+        color: white;
+        padding: 8px 15px;
+        border: none;
+        cursor: pointer;
+        font-size: 14px;
+        border-radius: 5px;
+        margin: 5px;
+      }
+
+      .cancel-btn:hover {
+        background-color: #e02b21;
+      }
+
+      .explanation-dropdown {
+        display: none;
+        margin-top: 10px;
+      }
+
+      .explanation-dropdown.visible {
+        display: block;
+      }
+
+      .explanation-btn {
+        background-color: #1b0b54;
+        color: white;
+        padding: 8px 15px;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 14px;
+        font-family: "Hind Siliguri", sans-serif;
+        width: 40%;
+        text-align: left;
+        position: relative;
+      }
+
+      .explanation-btn:hover {
+        background-color: #1b0b54;
+      }
+
+      .explanation-btn::after {
+        content: "▼";
+        position: absolute;
+        right: 10px;
+        font-size: 12px;
+      }
+
+      .explanation-btn.active::after {
+        content: "▲";
+      }
+
+      .explanation-content {
+        display: none;
+        padding: 15px;
+        background-color: #f9f9f9;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        font-size: 14px;
+        color: #000000;
+        text-align: left;
+        max-height: 450px;
+        overflow-y: auto;
+        margin-top: 5px;
+      }
+
+      .explanation-content.visible {
+        display: block;
+      }
+
+      .explanation-content p {
+        margin: 0 0 10px 0;
+      }
+
+      .explanation-content ul {
+        margin: 0;
+        padding-left: 20px;
+      }
+
+      .explanation-content li {
+        margin-bottom: 5px;
+      }
+
+      .explanation-content strong {
+        color: #1b0b54;
+      }
+
+      .explanation-label {
+        font-weight: bold;
+        color: #1b0b54;
+        margin-bottom: 10px;
+        display: block;
+      }
+
+      .locked .option {
+        pointer-events: none;
+        cursor: default;
+      }
+
+      .locked .option.selected {
+        pointer-events: none;
+        cursor: default;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="container" id="examContainer">
+      <div class="exam-content">
+        <h1>যুলোজি অনুশীলন</h1>
+        <div id="timer"></div>
+        <div id="exam-info"></div>
+        <div class="chart-container">
+          <canvas id="scoreChart"></canvas>
+        </div>
+        <div id="exam">
+          <!-- Questions will be generated dynamically -->
+        </div>
+        <button id="submitBtn">সাবমিট</button>
+      </div>
+    </div>
+
+    <div class="popup" id="scorePopup">
+      <div class="popup-header">তোমার স্কোর</div>
+      <div class="popup-body">
+        <p><strong>মোট প্রশ্ন:</strong> <span id="totalQuestions"></span></p>
+        <p>
+          <strong>উত্তর দিয়েছো:</strong>
+          <span style="color: #000000" id="answered"></span>
+        </p>
+        <p>
+          <strong>সঠিক উত্তর:</strong>
+          <span style="color: #0ab853" id="correctAnswers"></span>
+        </p>
+        <p>
+          <strong>ভুল উত্তর:</strong>
+          <span style="color: #f81010" id="wrongAnswers"></span>
+        </p>
+        <p>
+          <strong>অনুত্তরিত:</strong>
+          <span style="color: #ffc801" id="unanswered"></span>
+        </p>
+        <p><strong>তোমার চূড়ান্ত স্কোর:</strong></p>
+        <h2 style="color: #1b0b54"><span id="finalScore"></span></h2>
+        <form id="scoreForm" action="https://formspree.io/f/xpby" method="POST">
+          <input type="hidden" name="userID" id="formUserID" />
+          <input type="hidden" name="finalScore" id="formFinalScore" />
+          <input type="hidden" name="correctAnswers" id="formCorrectAnswers" />
+          <input type="hidden" name="wrongAnswers" id="formWrongAnswers" />
+          <input type="hidden" name="unanswered" id="formUnanswered" />
+          <button
+            type="submit"
+            class="confirm-btn"
+            style="background-color: #1b0b54"
+          >
+            <b>ওকে</b>
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <div class="popup" id="confirmPopup">
+      <div class="popup-header">কনফার্ম করো</div>
+      <div class="popup-body">
+        <p>
+          ভালো করে দেখে নাও! <br />
+          পরীক্ষা শেষ করতে চাও তো?
+        </p>
+        <button class="confirm-btn" onclick="confirmSubmit()">
+          <b>হ্যাঁ</b>
+        </button>
+        <button class="cancel-btn" onclick="cancelSubmit()"><b>না</b></button>
+      </div>
+    </div>
+
+    <script>
+      let chartInstance = null;
+
+      document.addEventListener("DOMContentLoaded", function () {
+        console.log("DOM fully loaded and parsed");
+        const examContainer = document.getElementById("examContainer");
+        if (!examContainer) {
+          console.error("Exam container not found!");
+          return;
+        }
+        try {
+          sessionStorage.setItem("isLoggedIn", "true");
+          sessionStorage.setItem("userID", "anonymous");
+          console.log(
+            "Session storage set: isLoggedIn = true, userID = anonymous"
+          );
+        } catch (e) {
+          console.error("Session storage error:", e);
+        }
+        examContainer.style.display = "block";
+        console.log("Exam container displayed");
+        startTimer();
+        generateQuestions();
+
+        window.addEventListener("beforeunload", function (event) {
+          if (
+            examContainer.style.display === "block" &&
+            sessionStorage.getItem("isLoggedIn") === "true"
+          ) {
+            autoSubmitScore();
+          }
+        });
+      });
+
+      const questions = [
+        {
+          id: 1,
+          question: "কোন স্তরে পানপাত্র সেল (Goblet cell) থাকে?",
+          options: {
+            a: "সেরোসা",
+            b: "মিউকোসা",
+            c: "মাসকুলারিস মিউকোসা",
+            d: "সাবমিউকোসা",
+          },
+          correct: "b",
+          explanation:
+            "<p>ক্ষুদ্রান্ত্রের মিউকোসা (Mucosa) স্তরে পানপাত্র সেল (Goblet cell) থাকে। এই কোষগুলো শ্লেষ্মা (Mucus) নিঃসরণ করে যা অন্ত্রের প্রাচীরকে রক্ষা করে এবং খাদ্য চলাচলে সাহায্য করে। এটি পরিপাকনালীর অভ্যন্তরীণ আস্তরণের একটি গুরুত্বপূর্ণ অংশ।</p>",
+        },
+        {
+          id: 2,
+          question:
+            "কোন Hormone পাকস্থলির হাইড্রোক্লোরিক এসিড (HCl) নিঃসরণ নিয়ন্ত্রণ করে?",
+          options: {
+            a: "কোলেসিস্টোকাইনিন",
+            b: "সিক্রেটিন",
+            c: "এন্টেরোকাইনিন",
+            d: "গ্যাস্ট্রিন",
+          },
+          correct: "d",
+          explanation:
+            "<p>গ্যাস্ট্রিন (Gastrin) নামক হরমোন পাকস্থলির হাইড্রোক্লোরিক অ্যাসিড (HCl) নিঃসরণ নিয়ন্ত্রণ করে। এটি গ্যাস্ট্রিক গ্রন্থিগুলোকে HCl এবং পেপসিনোজেন নিঃসরণের জন্য উদ্দীপিত করে, যা আমিষ পরিপাকের জন্য অম্লীয় পরিবেশ তৈরি করে।</p>",
+        },
+        {
+          id: 3,
+          question:
+            "মানবদেহের কোন অঙ্গে সর্বোচ্চ সংখ্যক গবলেট কোষ পাওয়া যায়?",
+          options: {
+            a: "বৃহদন্ত্র",
+            b: "যকৃত",
+            c: "ফুসফুস",
+            d: "ক্ষুদ্রান্ত্র",
+          },
+          correct: "a",
+          explanation:
+            "<p>মানবদেহের বৃহদন্ত্রে (Large intestine) সর্বোচ্চ সংখ্যক গবলেট কোষ (Goblet cells) পাওয়া যায়। কারণ বৃহদন্ত্রে মলের সাথে জলীয় পদার্থ মিশিয়ে মলকে নরম রাখতে এবং সহজে দেহ থেকে বের করে দিতে শ্লেষ্মার (mucus) প্রয়োজন বেশি হয়।</p>",
+        },
+        {
+          id: 4,
+          question: "অস্ত্রের কোন স্তরে গবলেট কোষ (Goblet cell) থাকে?",
+          options: {
+            a: "সেরোসা",
+            b: "মাসকিউলারিস মিউকোসা",
+            c: "মিউকোসা",
+            d: "সাবমিউকোসা",
+          },
+          correct: "c",
+          explanation:
+            "<p>অন্ত্রের (ক্ষুদ্রান্ত্র ও বৃহদন্ত্র উভয়) মিউকোসা (Mucosa) স্তরে গবলেট কোষ (Goblet cell) থাকে। এই কোষগুলো শ্লেষ্মা নিঃসরণ করে অন্ত্রের ভেতরের আবরণকে পিচ্ছিল ও সুরক্ষিত রাখে, যা খাদ্যবস্তু পরিবহনে সহায়তা করে।</p>",
+        },
+        {
+          id: 5,
+          question: "নিচের কোন জোড়াটি লোকাল হরমোনের উদাহরণ?",
+          options: {
+            a: "ইনসুলিন ও অ্যাড্রেনালিন",
+            b: "থাইরক্সিন ও সিক্রেটিন",
+            c: "সিক্রেটিন ও এন্টারোগ্যাস্ট্রোন",
+            d: "ইস্ট্রোজেন ও প্রোজেস্টেরন",
+          },
+          correct: "c",
+          explanation:
+            "<p>লোকাল হরমোন (Local hormones) বা গ্যাস্ট্রোইনটেস্টাইনাল হরমোন হলো সেই হরমোনগুলো যা পরিপাকতন্ত্রে উৎপাদিত হয় এবং কাছাকাছি অঙ্গগুলোর কার্যকারিতা নিয়ন্ত্রণ করে। সিক্রেটিন (Secretin) এবং এন্টারোগ্যাস্ট্রোন (Enterogastrone) (বা গ্যাস্ট্রিক ইনহিবিটরি পেপটাইড) এই ধরনের লোকাল হরমোনের উদাহরণ।</p>",
+        },
+        {
+          id: 6,
+          question:
+            "নিম্নের বামদিকের কোনটি ডানদিকের কোনটির সঙ্গে সামঞ্জস্যপূর্ণ?",
+          options: {
+            a: "গ্যাস্ট্রিন-আন্ত্রিক রস নিঃসরণ নিয়ন্ত্রণ করে",
+            b: "কোলেসিস্টোকাইনিন-লালারস নিঃসরণ নিয়ন্ত্রণ করে",
+            c: "সিক্রেটিন-অগ্ন্যাশয় রস নিঃসরণ নিয়ন্ত্রণ করে",
+            d: "প্যানক্রিওজাইমিন-পাচক রস নিঃসরণ নিয়ন্ত্রণ করে",
+          },
+          correct: "c",
+          explanation:
+            "<p>সিক্রেটিন (Secretin) একটি হরমোন যা ক্ষুদ্রান্ত্র থেকে নিঃসৃত হয়ে অগ্ন্যাশয় রস (Pancreatic juice) নিঃসরণ নিয়ন্ত্রণ করে, বিশেষ করে বাইকার্বনেট সমৃদ্ধ জলীয় অংশ। এই রস পাকস্থলী থেকে আসা অম্লীয় কাইমকে নিরপেক্ষ করে পরিপাক এনজাইমগুলোর অনুকূল পরিবেশ তৈরি করে।</p>",
+        },
+        {
+          id: 7,
+          question: "নিম্নের কোনটি এককোষী গ্রন্থি?",
+          options: {
+            a: "গবলেট",
+            b: "অগ্ন্যাশয়",
+            c: "পেপটাইড",
+            d: "যকৃত",
+          },
+          correct: "a",
+          explanation:
+            "<p>গবলেট কোষ (Goblet cell) হলো একটি এককোষী গ্রন্থি (Unicellular gland) যা শ্লেষ্মা নিঃসরণ করে। এটি পরিপাকনালীর বিভিন্ন অংশে পাওয়া যায় এবং শ্লেষ্মা নিঃসরণের মাধ্যমে আবরণী কোষগুলোকে রক্ষা করে ও পিচ্ছিল রাখে। অগ্ন্যাশয় এবং যকৃত বহু-কোষী গ্রন্থি।</p>",
+        },
+        {
+          id: 8,
+          question: "পরিপাকে সাহায্যকারী উৎসেচক কোনটি?",
+          options: {
+            a: "গ্লুকাগন",
+            b: "অ্যাড্রিনালিন",
+            c: "ইনসুলিন",
+            d: "সিক্রেটিন",
+          },
+          correct: "d",
+          explanation:
+            "<p>সিক্রেটিন (Secretin) একটি হরমোন যা পরিপাকে সাহায্য করে। এটি অগ্ন্যাশয়কে বাইকার্বনেট সমৃদ্ধ রস নিঃসৃত করতে উদ্দীপিত করে, যা অম্লীয় কাইমকে নিরপেক্ষ করে এবং পরিপাক এনজাইমগুলোর কার্যকারিতা বাড়ায়। যদিও এটি একটি হরমোন, উৎসেচক (এনজাইম) না হলেও পরিপাক প্রক্রিয়ায় এর ভূমিকা অপরিসীম।</p>",
+        },
+        {
+          id: 9,
+          question: "মানুষের দ্বিতীয় মস্তিষ্ক নামে পরিচিত কোনটি?",
+          options: {
+            a: "সুষুম্না কাণ্ড",
+            b: "এন্টেরিক স্নায়ুতন্ত্র",
+            c: "এক্সট্রিনসিক স্নায়ুতন্ত্র",
+            d: "মেডুলা অবলঙ্গাটা",
+          },
+          correct: "b",
+          explanation:
+            "<p>এন্টেরিক স্নায়ুতন্ত্র (Enteric Nervous System - ENS) কে প্রায়শই মানুষের দ্বিতীয় মস্তিষ্ক (Second brain) বলা হয়। এটি পরিপাকনালীর প্রাচীরে অবস্থিত একটি বিশাল স্নায়ুতন্ত্র যা পরিপাকের অনেক কার্যক্রম যেমন- সংকোচন, রস নিঃসরণ, রক্তপ্রবাহ স্বাধীনভাবে নিয়ন্ত্রণ করতে পারে।</p>",
+        },
+        {
+          id: 10,
+          question:
+            "মানুষের ক্ষুধা নিয়ন্ত্রণকারী কেন্দ্র মস্তিষ্কের কোথায় অবস্থিত?",
+          options: {
+            a: "সেরেবেলামে",
+            b: "হাইপোথ্যালামাসে",
+            c: "সেরেব্রামে",
+            d: "মেডুলা অবলঙ্গাটায়",
+          },
+          correct: "b",
+          explanation:
+            "<p>মানুষের ক্ষুধা এবং তৃষ্ণা নিয়ন্ত্রণকারী কেন্দ্র মস্তিষ্কের হাইপোথ্যালামাসে (Hypothalamus) অবস্থিত। হাইপোথ্যালামাস দেহের অনেক মৌলিক শারীরবৃত্তীয় প্রক্রিয়া যেমন- শরীরের তাপমাত্রা, ঘুম, আবেগ এবং বিভিন্ন হরমোন নিঃসরণ নিয়ন্ত্রণ করে।</p>",
+        },
+        {
+          id: 11,
+          question: "নিচের কোন হরমোনটি লিবারকুন গ্রন্থিকে উদ্দীপিত করে?",
+          options: {
+            a: "এন্টেরোকাইনিন",
+            b: "সিক্রেটিন",
+            c: "গ্যাস্ট্রিন",
+            d: "সোমাটোস্ট্যাটিন",
+          },
+          correct: "a",
+          explanation:
+            "<p>এন্টেরোকাইনিন (Enterocrinin) হলো একটি হরমোন যা ক্ষুদ্রান্ত্র থেকে নিঃসৃত হয় এবং লিবারকুন গ্রন্থিকে (Crypts of Lieberkuhn) উদ্দীপিত করে আন্ত্রিক রস (Succus entericus) নিঃসরণের জন্য। এই রস খাদ্যের চূড়ান্ত পরিপাকে সাহায্য করে।</p>",
+        },
+        {
+          id: 12,
+          question: "ডিউডেনামের প্রাচীরের ডেল্টা কোষ থেকে ক্ষরিত হরমোন কোনটি?",
+          options: {
+            a: "Peptide YY",
+            b: "CCK",
+            c: "Somatostatin",
+            d: "Gastrin",
+          },
+          correct: "c",
+          explanation:
+            "<p>ডিওডেনামের প্রাচীরের ডেল্টা কোষ (Delta cells) থেকে সোমাটোস্ট্যাটিন (Somatostatin) হরমোন ক্ষরিত হয়। এটি পরিপাকতন্ত্রে অন্যান্য হরমোনের নিঃসরণ (যেমন গ্যাস্ট্রিন, সিক্রেটিন) এবং পাচক রসের ক্ষরণ নিয়ন্ত্রণ করে।</p>",
+        },
+        {
+          id: 13,
+          question: "রক্তে কোন হরমোনের মাত্রা বেড়ে গেলে ক্ষুধার উদ্রেক হয়?",
+          options: {
+            a: "সিক্রেটিন",
+            b: "গ্রিলিন",
+            c: "পেপটাইড",
+            d: "এন্টেরোকাইনিন",
+          },
+          correct: "b",
+          explanation:
+            "<p>গ্রিলিন (Ghrelin) হলো একটি হormone যা পাকস্থলি থেকে নিঃসৃত হয় এবং রক্তে এর মাত্রা বেড়ে গেলে ক্ষুধার উদ্রেক (Hunger sensation) হয়। এটি 'ক্ষুধা হরমোন' নামে পরিচিত এবং মস্তিষ্ককে খাবার গ্রহণের সংকেত দেয়।</p>",
+        },
+        {
+          id: 14,
+          question: "পরিপাকে ক্রিয়াশীল সিক্রেটিন হরমোন কোথা থেকে ক্ষরিত হয়?",
+          options: {
+            a: "পাকস্থলি",
+            b: "ডিওডেনাম",
+            c: "ইলিয়াম",
+            d: "অগ্ন্যাশয়",
+          },
+          correct: "b",
+          explanation:
+            "<p>পরিপাকে ক্রিয়াশীল সিক্রেটিন (Secretin) হরমোন ডিওডেনামের (Duodenum) প্রাচীর থেকে ক্ষরিত হয়। এটি ক্ষুদ্রান্ত্রে অম্লীয় কাইম পৌঁছালে নিঃসৃত হয় এবং অগ্ন্যাশয়কে বাইকার্বনেট সমৃদ্ধ রস নিঃসরণে উদ্দীপিত করে।</p>",
+        },
+        {
+          id: 15,
+          question: "সোমাটোস্ট্যাটিন হরমোন নিঃসৃত হয় নিচের কোনটি থেকে?",
+          options: {
+            a: "যকৃত",
+            b: "মুখ",
+            c: "পিত্তরস",
+            d: "অগ্ন্যাশয়",
+          },
+          correct: "d",
+          explanation:
+            "<p>সোমাটোস্ট্যাটিন (Somatostatin) হরমোন প্রধানত অগ্ন্যাশয়ের (Pancreas) ল্যাঙ্গারহ্যান্সের আইলেটসের ডেল্টা কোষ থেকে নিঃসৃত হয়। এটি গ্যাস্ট্রোইনটেস্টাইনাল ট্র্যাক্টের কার্যকারিতা নিয়ন্ত্রণ করে এবং অন্যান্য হরমোনের নিঃসরণকে বাধা দেয়।</p>",
+        },
+        {
+          id: 16,
+          question: "নিচের কোনটিকে গ্যাস্ট্রিক ইনহিবিটরি পেপটাইড বলা হয়?",
+          options: {
+            a: "এন্টারোকাইনিন",
+            b: "ডিওক্রাইনিন",
+            c: "এন্টারোক্রাইনিন",
+            d: "এন্টারোগ্যাস্ট্রোন",
+          },
+          correct: "d",
+          explanation:
+            "<p>এন্টারোগ্যাস্ট্রোন (Enterogastrone)-কে গ্যাস্ট্রিক ইনহিবিটরি পেপটাইড (Gastric Inhibitory Peptide - GIP) ও বলা হয়। এটি ক্ষুদ্রান্ত্র থেকে নিঃসৃত হয় এবং পাকস্থলির কার্যক্রম (যেমন গ্যাস্ট্রিক রস নিঃসরণ ও গতি) দমন করে, বিশেষ করে চর্বি জাতীয় খাদ্য ক্ষুদ্রান্ত্রে প্রবেশ করলে।</p>",
+        },
+        {
+          id: 17,
+          question: "পাকস্থলির প্রাচীরের স্তর নয় কোনটি?",
+          options: {
+            a: "লোবিউল",
+            b: "সেরোসা",
+            c: "মিউকোসা",
+            d: "পেশিস্তর",
+          },
+          correct: "a",
+          explanation:
+            "<p>লোবিউল (Lobule) হলো যকৃত এবং অন্যান্য গ্রন্থির কার্যকরী একক। এটি পাকস্থলির প্রাচীরের স্তর নয়। পাকস্থলির প্রাচীরের চারটি প্রধান স্তর হলো মিউকোসা (mucosa), সাবমিউকোসা (submucosa), মাসকুলারিস এক্সটার্না (muscularis externa) বা পেশিস্তর এবং সেরোসা (serosa)।</p>",
+        },
+      ];
+
+      const totalQuestions = questions.length;
+      let timeLeft = Math.floor(totalQuestions / 2) * 60;
+      const timerElement = document.getElementById("timer");
+      let timerInterval;
+
+      function updateTimer() {
+        const minutes = Math.floor(timeLeft / 60);
+        const seconds = timeLeft % 60;
+        timerElement.innerText = `${toBengaliNumber(
+          minutes
+        )} মিনিট ${toBengaliNumber(seconds)} সেকেন্ড`;
+
+        if (timeLeft > 0) {
+          timeLeft--;
+        } else {
+          stopTimer();
+          confirmSubmit();
+        }
+      }
+
+      function startTimer() {
+        console.log("Starting timer");
+        timerElement.innerText = `${toBengaliNumber(
+          Math.floor(timeLeft / 60)
+        )} মিনিট ${toBengaliNumber(timeLeft % 60)} সেকেন্ড`;
+        timerInterval = setInterval(updateTimer, 1000);
+      }
+
+      function stopTimer() {
+        clearInterval(timerInterval);
+        console.log("Timer stopped");
+      }
+
+      function toBengaliNumber(num) {
+        const bengaliDigits = [
+          "০",
+          "১",
+          "২",
+          "৩",
+          "৪",
+          "৫",
+          "৬",
+          "৭",
+          "৮",
+          "৯",
+        ];
+        let numStr = num.toString();
+
+        let isNegative = num < 0;
+        if (isNegative) {
+          numStr = numStr.substring(1);
+        }
+
+        if (numStr.includes(".")) {
+          let [integerPart, decimalPart] = numStr.split(".");
+          let integerBengali = integerPart
+            .split("")
+            .map((digit) => bengaliDigits[parseInt(digit)])
+            .join("");
+          let decimalBengali = decimalPart
+            .split("")
+            .map((digit) => bengaliDigits[parseInt(digit)])
+            .join("");
+          return (
+            (isNegative ? "−" : "") + integerBengali + "." + decimalBengali
+          );
+        } else {
+          let integerBengali = numStr
+            .split("")
+            .map((digit) => bengaliDigits[parseInt(digit)])
+            .join("");
+          return (isNegative ? "−" : "") + integerBengali;
+        }
+      }
+
+      function shuffleArray(array) {
+        for (let i = array.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [array[i], array[j]] = [array[j], array[i]];
+        }
+        return array;
+      }
+
+      function generateQuestions() {
+        console.log("Generating questions");
+        const examContainer = document.querySelector("#exam");
+        if (!examContainer) {
+          console.error("Exam container (#exam) not found!");
+          return;
+        }
+        examContainer.innerHTML = "";
+        console.log("Questions array:", questions);
+        const shuffledQuestions = shuffleArray([...questions]);
+        shuffledQuestions.forEach((question, index) => {
+          console.log(`Generating question ${index + 1}:`, question);
+          const questionDiv = document.createElement("div");
+          questionDiv.classList.add("question-container");
+          questionDiv.setAttribute("data-question", question.id);
+          questionDiv.setAttribute("data-correct", question.correct);
+
+          let optionsHTML = "";
+          for (let option in question.options) {
+            optionsHTML += `
+                  <label class="option" data-option="${option}">
+                    <div class="circle">${option}</div>
+                    <span class="option-text">${question.options[option]}</span>
+                  </label>
+                `;
+          }
+
+          const explanationHTML = question.explanation
+            ? `<div class="explanation-dropdown">
+                     <button class="explanation-btn">ব্যাখ্যা দেখো</button>
+                     <div class="explanation-content">
+                       <div class="explanation-label">ব্যাখ্যা:</div>
+                       ${question.explanation}
+                     </div>
+                   </div>`
+            : "";
+
+          questionDiv.innerHTML = `
+                <p class="question-label">${index + 1}. ${question.question}</p>
+                <div class="options">
+                  ${optionsHTML}
+                </div>
+                ${explanationHTML}
+              `;
+          examContainer.appendChild(questionDiv);
+          console.log(`Appended question ${index + 1} to exam container`);
+        });
+
+        const questionContainers = document.querySelectorAll(
+          ".question-container"
+        );
+        console.log(`Found ${questionContainers.length} question containers`);
+        questionContainers.forEach((container, idx) => {
+          console.log(`Setting question ${idx + 1} to visible`);
+          container.style.display = "block";
+        });
+
+        document.querySelectorAll(".option").forEach((option) => {
+          option.addEventListener(
+            "click",
+            function (e) {
+              e.preventDefault();
+              const parent = this.closest(".question-container");
+              if (parent.classList.contains("locked")) return;
+              parent.classList.add("locked");
+              parent.querySelectorAll(".option").forEach((el) => {
+                if (el !== this) {
+                  el.style.pointerEvents = "none";
+                  el.style.cursor = "default";
+                }
+                el.classList.remove("selected");
+              });
+              this.classList.add("selected");
+              console.log(
+                `Option selected for question ${parent.getAttribute(
+                  "data-question"
+                )}: ${this.getAttribute("data-option")}`
+              );
+            },
+            { once: true }
+          );
+        });
+
+        document.querySelectorAll(".explanation-btn").forEach((btn) => {
+          btn.addEventListener("click", function () {
+            const content = this.nextElementSibling;
+            content.classList.toggle("visible");
+            this.classList.toggle("active");
+            console.log("Toggled explanation visibility");
+          });
+        });
+
+        const examInfo = document.getElementById("exam-info");
+        if (examInfo) {
+          examInfo.innerText = `পূর্ণ নম্বরঃ ${toBengaliNumber(
+            totalQuestions
+          )}`;
+          console.log("Exam info updated");
+        } else {
+          console.error("Exam info element not found!");
+        }
+      }
+
+      function initializeChart() {
+        console.log("Initializing chart");
+        const ctx = document.getElementById("scoreChart").getContext("2d");
+        chartInstance = new Chart(ctx, {
+          type: "pie",
+          data: {
+            labels: ["ঠিক উত্তর", "ভুল উত্তর", "অনুত্তরিত"],
+            datasets: [
+              {
+                data: [0, 0, 0],
+                backgroundColor: ["#34c759", "#ff3b30", "#007aff"],
+                borderColor: "#fff",
+                borderWidth: 2,
+                hoverOffset: 10,
+              },
+            ],
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            cutout: "10%",
+            layout: {
+              padding: 10,
+            },
+            plugins: {
+              legend: {
+                position: "bottom",
+                labels: {
+                  font: {
+                    family: '"Hind Siliguri", sans-serif',
+                    size: 13,
+                    weight: "bold",
+                  },
+                  color: "#333",
+                  padding: 12,
+                  boxWidth: 14,
+                  generateLabels: (chart) => {
+                    const data = chart.data;
+                    return data.labels.map((label, i) => ({
+                      text: label,
+                      font: {
+                        family: '"Hind Siliguri", sans-serif',
+                      },
+                      fillStyle: data.datasets[0].backgroundColor[i],
+                      hidden: !chart.getDataVisibility(i),
+                      index: i,
+                    }));
+                  },
+                },
+              },
+              tooltip: {
+                backgroundColor: "rgba(0, 0, 0, 0.9)",
+                cornerRadius: 6,
+                titleFont: {
+                  family: '"Hind Siliguri", sans-serif',
+                  size: 14,
+                  weight: "bold",
+                },
+                bodyFont: {
+                  family: '"Hind Siliguri", sans-serif',
+                  size: 13,
+                },
+                padding: 10,
+                boxPadding: 5,
+              },
+            },
+            animation: {
+              animateScale: true,
+              animateRotate: true,
+              duration: 1000,
+              easing: "easeOutQuart",
+            },
+            elements: {
+              arc: {
+                borderRadius: 8,
+              },
+            },
+            onClick: (e, elements) => {
+              if (elements.length > 0) {
+                const index = elements[0].index;
+                const filter = ["correct", "wrong", "unanswered"][index];
+                filterQuestions(filter);
+              } else {
+                filterQuestions("all");
+              }
+            },
+          },
+        });
+        console.log("Chart initialized");
+      }
+
+      function filterQuestions(type) {
+        console.log(`Filtering questions by type: ${type}`);
+        document.querySelectorAll(".question-container").forEach((question) => {
+          const status = question.getAttribute("data-status");
+          if (type === "all" || status === type) {
+            question.style.display = "block";
+          } else {
+            question.style.display = "none";
+          }
+        });
+      }
+
+      function showConfirmPopup() {
+        console.log("Showing confirm popup");
+        document.getElementById("confirmPopup").style.display = "block";
+      }
+
+      function autoSubmitScore() {
+        console.log("Auto-submitting score");
+        stopTimer();
+        let score = 0,
+          total = questions.length,
+          answered = 0,
+          correct = 0,
+          wrong = 0,
+          unanswered = 0;
+
+        document.querySelectorAll(".question-container").forEach((question) => {
+          let correctAnswer = question.getAttribute("data-correct");
+          let selectedOption = question.querySelector(".option.selected");
+
+          if (selectedOption) {
+            answered++;
+            let chosenAnswer = selectedOption.getAttribute("data-option");
+            if (chosenAnswer === correctAnswer) {
+              score += 1;
+              correct++;
+              question.setAttribute("data-status", "correct");
+            } else {
+              score -= 0.25;
+              wrong++;
+              question.setAttribute("data-status", "wrong");
+            }
+          } else {
+            unanswered++;
+            question.setAttribute("data-status", "unanswered");
+          }
+        });
+
+        const userID = sessionStorage.getItem("userID") || "anonymous";
+        const formData = new FormData();
+        formData.append("userID", userID);
+        formData.append("finalScore", score.toFixed(2));
+        formData.append("correctAnswers", correct);
+        formData.append("wrongAnswers", wrong);
+        formData.append("unanswered", unanswered);
+
+        const url = "https://formspree.io/f/xpwy";
+        navigator.sendBeacon(url, formData);
+        console.log("Auto-submission sent via sendBeacon for userID:", userID);
+      }
+
+      function confirmSubmit() {
+        console.log("Confirming submission");
+        document.getElementById("confirmPopup").style.display = "none";
+        stopTimer();
+        let score = 0,
+          total = questions.length,
+          answered = 0,
+          correct = 0,
+          wrong = 0,
+          unanswered = 0;
+
+        document
+          .querySelectorAll(".question-container")
+          .forEach((question, index) => {
+            let correctAnswer = question.getAttribute("data-correct");
+            let selectedOption = question.querySelector(".option.selected");
+
+            if (selectedOption) {
+              answered++;
+              let chosenAnswer = selectedOption.getAttribute("data-option");
+              if (chosenAnswer === correctAnswer) {
+                selectedOption
+                  .querySelector(".option-text")
+                  .classList.add("correct-text");
+                score += 1;
+                correct++;
+                question.setAttribute("data-status", "correct");
+              } else {
+                selectedOption
+                  .querySelector(".option-text")
+                  .classList.add("incorrect-text");
+                question
+                  .querySelector(
+                    `[data-option="${correctAnswer}"] .option-text`
+                  )
+                  .classList.add("correct-text");
+                score -= 0.25;
+                wrong++;
+                question.setAttribute("data-status", "wrong");
+              }
+            } else {
+              question
+                .querySelector(`[data-option="${correctAnswer}"] .option-text`)
+                .classList.add("unattempted-text");
+              unanswered++;
+              question.setAttribute("data-status", "unanswered");
+            }
+            question.style.display = "block";
+
+            const explanationDropdown = question.querySelector(
+              ".explanation-dropdown"
+            );
+            if (explanationDropdown) {
+              explanationDropdown.classList.add("visible");
+            }
+          });
+
+        const chartContainer = document.querySelector(".chart-container");
+        chartContainer.classList.add("visible");
+        if (!chartInstance) {
+          initializeChart();
+        }
+        chartInstance.data.datasets[0].data = [correct, wrong, unanswered];
+        chartInstance.update();
+        console.log("Chart updated with data:", [correct, wrong, unanswered]);
+
+        const userID = sessionStorage.getItem("userID") || "anonymous";
+        document.getElementById("totalQuestions").innerText =
+          toBengaliNumber(total);
+        document.getElementById("answered").innerText =
+          toBengaliNumber(answered);
+        document.getElementById("correctAnswers").innerText =
+          toBengaliNumber(correct);
+        document.getElementById("wrongAnswers").innerText =
+          toBengaliNumber(wrong);
+        document.getElementById("unanswered").innerText =
+          toBengaliNumber(unanswered);
+        document.getElementById("finalScore").innerText = toBengaliNumber(
+          score.toFixed(2)
+        );
+
+        document.getElementById("formUserID").value = userID;
+        document.getElementById("formFinalScore").value = score.toFixed(2);
+        document.getElementById("formCorrectAnswers").value = correct;
+        document.getElementById("formWrongAnswers").value = wrong;
+        document.getElementById("formUnanswered").value = unanswered;
+
+        document.getElementById("submitBtn").style.display = "none";
+
+        document.getElementById("scorePopup").style.display = "block";
+
+        const form = document.getElementById("scoreForm");
+        fetch(form.action, {
+          method: "POST",
+          body: new FormData(form),
+          headers: {
+            Accept: "application/json",
+          },
+        })
+          .then((response) => {
+            if (response.ok) {
+              console.log("Form submitted successfully");
+              form.reset();
+            } else {
+              console.error("Form submission failed:", response.statusText);
+            }
+          })
+          .catch((error) => {
+            console.error("Error:", error);
+          });
+      }
+
+      function cancelSubmit() {
+        console.log("Canceling submission");
+        document.getElementById("confirmPopup").style.display = "none";
+      }
+
+      document
+        .getElementById("submitBtn")
+        .addEventListener("click", function () {
+          console.log("Submit button clicked");
+          showConfirmPopup();
+        });
+
+      function closePopup() {
+        console.log("Closing score popup");
+        const scorePopup = document.getElementById("scorePopup");
+        scorePopup.classList.add("slide-out");
+        setTimeout(() => {
+          scorePopup.style.display = "none";
+          scorePopup.classList.remove("slide-out");
+          window.scrollTo({ top: 0, behavior: "smooth" });
+        }, 500);
+      }
+
+      document
+        .getElementById("scoreForm")
+        .addEventListener("submit", function (event) {
+          event.preventDefault();
+          console.log("Score form submitted");
+          closePopup();
+        });
+    </script>
+  </body>
+</html>
